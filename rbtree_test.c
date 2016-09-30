@@ -7,17 +7,17 @@
 struct module_node {
     struct rb_node node;
     bool debug;
-    char *name;
+    char* name;
 };
 
-struct module_node *module_search(struct rb_root *root, char *name);
-int module_insert(struct rb_root *root, struct module_node *module);
-void module_free(struct module_node *module);
-int register_module(char *module_name);
-int enable_module_debug(char *module_name);
-void preorder_traverse(struct rb_node *node);
-void inorder_traverse(struct rb_node *node);
-void postorder_traverse(struct rb_node *node);
+struct module_node* module_search(struct rb_root* root, char* name);
+int module_insert(struct rb_root* root, struct module_node* module);
+void module_free(struct module_node* module);
+int register_module(char* module_name);
+int enable_module_debug(char* module_name);
+void preorder_traverse(struct rb_node* node);
+void inorder_traverse(struct rb_node* node);
+void postorder_traverse(struct rb_node* node);
 
 struct rb_root module_tree = RB_ROOT;
 
@@ -34,7 +34,7 @@ enum _LOG_PRI {
 #if DEBUG
 #define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                    \
     do {                                                                    \
-        struct module_node *module = module_search(&module_tree, LOG_TAG);  \
+        struct module_node* module = module_search(&module_tree, LOG_TAG);  \
         if (module != NULL) {                                               \
             if (module->debug || LOG_PRI == RUFF_LOG_ERROR) {               \
                 printf("(%s:%d) " fmt "\n", func, line, ##args);            \
@@ -52,11 +52,11 @@ enum _LOG_PRI {
     } while (0)
 #endif
 
-struct module_node *module_search(struct rb_root *root, char *name)
+struct module_node* module_search(struct rb_root* root, char* name)
 {
-    struct rb_node *node = root->rb_node;
+    struct rb_node* node = root->rb_node;
     while (node) {
-        struct module_node *module = rb_entry(node, struct module_node, node);
+        struct module_node* module = rb_entry(node, struct module_node, node);
         int result;
         result = strcmp(name, module->name);
         if (result < 0) {
@@ -70,14 +70,14 @@ struct module_node *module_search(struct rb_root *root, char *name)
     return NULL;
 }
 
-int module_insert(struct rb_root *root, struct module_node *module)
+int module_insert(struct rb_root* root, struct module_node* module)
 {
-    struct rb_node **new = &(root->rb_node);
-    struct rb_node *parent = NULL;
+    struct rb_node** new = &(root->rb_node);
+    struct rb_node* parent = NULL;
 
     // Figure out where to put new code
     while (*new) {
-        struct module_node *this = rb_entry(*new, struct module_node, node);
+        struct module_node* this = rb_entry(*new, struct module_node, node);
         int result = strcmp(module->name, this->name);
         parent = *new;
         if (result < 0) {
@@ -96,7 +96,7 @@ int module_insert(struct rb_root *root, struct module_node *module)
     return 1;
 }
 
-void module_free(struct module_node *module)
+void module_free(struct module_node* module)
 {
     if (module != NULL) {
         if (module->name != NULL) {
@@ -108,9 +108,9 @@ void module_free(struct module_node *module)
     }
 }
 
-int register_module(char *module_name)
+int register_module(char* module_name)
 {
-    struct module_node *module = (struct module_node*)malloc(sizeof(struct module_node));
+    struct module_node* module = (struct module_node*)malloc(sizeof(struct module_node));
     if (module == NULL) {
         printf("Error: malloc failed\n");
         return -1;
@@ -124,9 +124,9 @@ int register_module(char *module_name)
     return 0;
 }
 
-int enable_module_debug(char *module_name)
+int enable_module_debug(char* module_name)
 {
-    struct module_node *module = module_search(&module_tree, module_name);
+    struct module_node* module = module_search(&module_tree, module_name);
     if (module == NULL) {
         printf("Error: no module called '%s'!\n", module_name);
         return -1;
@@ -137,38 +137,37 @@ int enable_module_debug(char *module_name)
     return 0;
 }
 
-
-void preorder_traverse(struct rb_node *node)
+void preorder_traverse(struct rb_node* node)
 {
     if (node) {
-        struct module_node *module = rb_entry(node, struct module_node, node);
+        struct module_node* module = rb_entry(node, struct module_node, node);
         printf("%s%d ", module->name, module->debug);
         preorder_traverse(node->rb_left);
         preorder_traverse(node->rb_right);
     }
 }
 
-void inorder_traverse(struct rb_node *node)
+void inorder_traverse(struct rb_node* node)
 {
     if (node) {
         inorder_traverse(node->rb_left);
-        struct module_node *module = rb_entry(node, struct module_node, node);
+        struct module_node* module = rb_entry(node, struct module_node, node);
         printf("%s:%d ", module->name, module->debug);
         inorder_traverse(node->rb_right);
     }
 }
 
-void postorder_traverse(struct rb_node *node)
+void postorder_traverse(struct rb_node* node)
 {
     if (node) {
         postorder_traverse(node->rb_left);
         postorder_traverse(node->rb_right);
-        struct module_node *module = rb_entry(node, struct module_node, node);
+        struct module_node* module = rb_entry(node, struct module_node, node);
         printf("%s:%d ", module->name, module->debug);
     }
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, const char* argv[])
 {
     register_module("pwm");
     register_module("pwm_jerry");
@@ -192,30 +191,31 @@ int main(int argc, const char *argv[])
     LOGE("qei", "[error] qei");
     LOGD("ok", "[debug] ok");
 
-    struct rb_node *node = (&module_tree)->rb_node;
+    printf("\n");
+
+    struct rb_node* node = (&module_tree)->rb_node;
     printf("preorder_traverse: \n");
     preorder_traverse(node);
-    printf("\n");
+    printf("\n\n");
 
     printf("inorder_traverse: \n");
     inorder_traverse(node);
-    printf("\n");
+    printf("\n\n");
 
     printf("postorder_traverse: \n");
     postorder_traverse(node);
-    printf("\n");
+    printf("\n\n");
 
     /* search */
-    printf("\n");
     for (node = rb_first(&module_tree); node; node = rb_next(node)) {
-        struct module_node *module = rb_entry(node, struct module_node, node);
+        struct module_node* module = rb_entry(node, struct module_node, node);
         printf("%s:%d\n", module->name, module->debug);
     }
     printf("\n");
 
     /* delete */
     printf("delete node pwm\n");
-    struct module_node *module = module_search(&module_tree, "pwm");
+    struct module_node* module = module_search(&module_tree, "pwm");
     if (module) {
         rb_erase(&module->node, &module_tree);
         module_free(module);
@@ -231,7 +231,7 @@ int main(int argc, const char *argv[])
     /* search */
     printf("\n");
     for (node = rb_first(&module_tree); node; node = rb_next(node)) {
-        struct module_node *module = rb_entry(node, struct module_node, node);
+        struct module_node* module = rb_entry(node, struct module_node, node);
         printf("%s:%d\n", module->name, module->debug);
     }
     printf("\n");
