@@ -1,3 +1,5 @@
+#pragma once
+
 /*
   Red Black Trees
   (C) 1999  Andrea Arcangeli <andrea@suse.de>
@@ -30,9 +32,6 @@
   be called. Such function will do the not trivial work to rebalance the
   rbtree, if necessary.
 */
-
-#ifndef _RBTREE_H_
-#define _RBTREE_H_
 
 #if defined(container_of)
 #  undef container_of
@@ -129,5 +128,3 @@ static inline void rb_link_node(struct rb_node* node, struct rb_node* parent, st
     node->rb_left = node->rb_right = NULL;
     *rb_link = node;
 }
-
-#endif
