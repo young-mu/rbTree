@@ -2,41 +2,79 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-struct my_node {
+struct module_node {
     struct rb_node node;
-    char *str;
+    bool debug;
+    char *name;
 };
 
-struct rb_root my_tree = RB_ROOT;
+struct module_node *module_search(struct rb_root *root, char *name);
+int module_insert(struct rb_root *root, struct module_node *module);
+void module_free(struct module_node *module);
+void register_module(char *module_name);
+void enable_module_debug(char *module_name);
+void preorder_traverse(struct rb_node *node);
+void inorder_traverse(struct rb_node *node);
+void postorder_traverse(struct rb_node *node);
 
-struct my_node *mySearch(struct rb_root *root, char *str)
+struct rb_root module_tree = RB_ROOT;
+
+#define DEBUG 1
+
+enum _LOG_PRI {
+    RUFF_LOG_DEBUG = 1,
+    RUFF_LOG_ERROR
+};
+
+#define LOGE(LOG_TAG, ...)   _LOG(RUFF_LOG_ERROR, LOG_TAG, __func__, __LINE__, ##__VA_ARGS__)
+#define LOGD(LOG_TAG, ...)   _LOG(RUFF_LOG_DEBUG, LOG_TAG, __func__, __LINE__, ##__VA_ARGS__)
+
+#if DEBUG
+#define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                    \
+    do {                                                                    \
+        struct module_node *node = module_search(&module_tree, LOG_TAG);    \
+        if (node->debug || LOG_PRI == RUFF_LOG_ERROR) {                     \
+            printf("(%s:%d) " fmt "\n", func, line, ##args);                \
+        }                                                                   \
+    } while (0)
+#else
+#define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                    \
+    do {                                                                    \
+        if (LOG_PRI == RUFF_LOG_ERROR) {                                    \
+            printf("(%s:%d) " fmt "\n", func, line, ##args);                \
+        }                                                                   \
+    } while (0)
+#endif
+
+struct module_node *module_search(struct rb_root *root, char *name)
 {
     struct rb_node *node = root->rb_node;
     while (node) {
-        struct my_node *data = rb_entry(node, struct my_node, node);
+        struct module_node *module = rb_entry(node, struct module_node, node);
         int result;
-        result = strcmp(str, data->str);
+        result = strcmp(name, module->name);
         if (result < 0) {
             node = node->rb_left;
         } else if (result > 0) {
             node = node->rb_right;
         } else {
-            return data;
+            return module;
         }
     }
     return NULL;
 }
 
-int myInsert(struct rb_root *root, struct my_node *data)
+int module_insert(struct rb_root *root, struct module_node *module)
 {
     struct rb_node **new = &(root->rb_node);
     struct rb_node *parent = NULL;
 
-    /* Figure out where to put new code */
+    // Figure out where to put new code
     while (*new) {
-        struct my_node *this = rb_entry(*new, struct my_node, node);
-        int result = strcmp(data->str, this->str);
+        struct module_node *this = rb_entry(*new, struct module_node, node);
+        int result = strcmp(module->name, this->name);
         parent = *new;
         if (result < 0) {
             new = &((*new)->rb_left);
@@ -47,105 +85,140 @@ int myInsert(struct rb_root *root, struct my_node *data)
         }
     }
 
-    /* Add new node and rebalance tree */
-    rb_link_node(&data->node, parent, new);
-    rb_insert_color(&data->node, root);
+    // Add new node and rebalance tree
+    rb_link_node(&module->node, parent, new);
+    rb_insert_color(&module->node, root);
 
     return 1;
 }
 
-void myFree(struct my_node *node)
+void module_free(struct module_node *module)
 {
-    if (node != NULL) {
-        if (node->str != NULL) {
-            free(node->str);
-            node->str = NULL;
+    if (module != NULL) {
+        if (module->name != NULL) {
+            free(module->name);
+            module->name = NULL;
         }
-        free(node);
-        node = NULL;
+        free(module);
+        module = NULL;
     }
 }
 
-void PreOrder(struct rb_node *node)
+void register_module(char *module_name)
+{
+    struct module_node *module = (struct module_node*)malloc(sizeof(struct module_node));
+    module->name = (char*)malloc(sizeof(char) * (strlen(module_name) + 1));
+
+    snprintf(module->name, strlen(module_name) + 1, "%s", module_name);
+    module->debug = false;
+
+    module_insert(&module_tree, module);
+}
+
+void enable_module_debug(char *module_name)
+{
+    struct module_node *module = module_search(&module_tree, module_name);
+    module->debug = true;
+}
+
+
+void preorder_traverse(struct rb_node *node)
 {
     if (node) {
-        struct my_node *data = rb_entry(node, struct my_node, node);
-        printf("%s ", data->str);
-        PreOrder(node->rb_left);
-        PreOrder(node->rb_right);
+        struct module_node *module = rb_entry(node, struct module_node, node);
+        printf("%s%d ", module->name, module->debug);
+        preorder_traverse(node->rb_left);
+        preorder_traverse(node->rb_right);
     }
 }
 
-void InOrder(struct rb_node *node)
+void inorder_traverse(struct rb_node *node)
 {
     if (node) {
-        InOrder(node->rb_left);
-        struct my_node *data = rb_entry(node, struct my_node, node);
-        printf("%s ", data->str);
-        InOrder(node->rb_right);
+        inorder_traverse(node->rb_left);
+        struct module_node *module = rb_entry(node, struct module_node, node);
+        printf("%s:%d ", module->name, module->debug);
+        inorder_traverse(node->rb_right);
     }
 }
 
-void PostOrder(struct rb_node *node)
+void postorder_traverse(struct rb_node *node)
 {
     if (node) {
-        PostOrder(node->rb_left);
-        PostOrder(node->rb_right);
-        struct my_node *data = rb_entry(node, struct my_node, node);
-        printf("%s ", data->str);
+        postorder_traverse(node->rb_left);
+        postorder_traverse(node->rb_right);
+        struct module_node *module = rb_entry(node, struct module_node, node);
+        printf("%s:%d ", module->name, module->debug);
     }
 }
 
 int main(int argc, const char *argv[])
 {
-    struct my_node *nodes[8];
+    register_module("pwm");
+    register_module("pwm_jerry");
+    register_module("i2c");
+    register_module("i2c_jerry");
+    register_module("qei");
+    register_module("qei_jerry");
+    register_module("uart");
+    register_module("fs");
+    register_module("memory");
 
-    /* insert */
-    int i;
-    for (i = 0; i < 8; i++) {
-        nodes[i] = (struct my_node *)malloc(sizeof(struct my_node));
-        nodes[i]->str = (char *)malloc(sizeof(char) * 4);
-        sprintf(nodes[i]->str, "%d", i);
-        myInsert(&my_tree, nodes[i]);
-    }
+    enable_module_debug("pwm");
+    enable_module_debug("pwm_jerry");
 
-    struct rb_node *node = (&my_tree)->rb_node;
-    printf("PreOrder: \n");
-    PreOrder(node);
-    printf("\n");
+//    struct rb_node *node = (&module_tree)->rb_node;
+//    printf("preorder_traverse: \n");
+//    preorder_traverse(node);
+//    printf("\n");
+//
+//    printf("inorder_traverse: \n");
+//    inorder_traverse(node);
+//    printf("\n");
+//
+//    printf("postorder_traverse: \n");
+//    postorder_traverse(node);
+//    printf("\n");
+//
+//    /* search */
+//    printf("\n");
+//    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
+//        struct module_node *module = rb_entry(node, struct module_node, node);
+//        printf("%s:%d\n", module->name, module->debug);
+//    }
+//    printf("\n");
+//
+//    /* delete */
+//    printf("delete node pwm\n");
+//    struct module_node *module = module_search(&module_tree, "pwm");
+//    if (module) {
+//        rb_erase(&module->node, &module_tree);
+//        module_free(module);
+//    }
+//
+//    printf("delete node i2c\n");
+//    module = module_search(&module_tree, "i2c");
+//    if (module) {
+//        rb_erase(&module->node, &module_tree);
+//        module_free(module);
+//    }
+//
+//    /* search */
+//    printf("\n");
+//    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
+//        struct module_node *module = rb_entry(node, struct module_node, node);
+//        printf("%s:%d\n", module->name, module->debug);
+//    }
+//    printf("\n");
 
-    printf("InOrder: \n");
-    InOrder(node);
-    printf("\n");
+    LOGD("pwm", "[debug] pwm");
+    LOGE("pwm", "[error] pwm");
 
-    printf("PostOrder: \n");
-    PostOrder(node);
-    printf("\n");
+    LOGD("pwm_jerry", "[debug] pwm_jerry");
+    LOGE("pwm_jerry", "[error] pwm_jerry");
 
-    /* search */
-    for (node = rb_first(&my_tree); node; node = rb_next(node)) {
-        printf("key = %s\n", rb_entry(node, struct my_node, node)->str);
-    }
-
-    /* delete */
-    printf("delete node 3\n");
-    struct my_node *data = mySearch(&my_tree, "3");
-    if (data) {
-        rb_erase(&data->node, &my_tree);
-        myFree(data);
-    }
-
-    printf("delete node 7\n");
-    data = mySearch(&my_tree, "7");
-    if (data) {
-        rb_erase(&data->node, &my_tree);
-        myFree(data);
-    }
-
-    /* search */
-    for (node = rb_first(&my_tree); node; node = rb_next(node)) {
-        printf("key = %s\n", rb_entry(node, struct my_node, node)->str);
-    }
+    LOGD("qei", "[debug] qei");
+    LOGE("qei", "[error] qei");
 
     return 0;
 }
