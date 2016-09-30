@@ -13,8 +13,8 @@ struct module_node {
 struct module_node *module_search(struct rb_root *root, char *name);
 int module_insert(struct rb_root *root, struct module_node *module);
 void module_free(struct module_node *module);
-void register_module(char *module_name);
-void enable_module_debug(char *module_name);
+int register_module(char *module_name);
+int enable_module_debug(char *module_name);
 void preorder_traverse(struct rb_node *node);
 void inorder_traverse(struct rb_node *node);
 void postorder_traverse(struct rb_node *node);
@@ -34,9 +34,13 @@ enum _LOG_PRI {
 #if DEBUG
 #define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                    \
     do {                                                                    \
-        struct module_node *node = module_search(&module_tree, LOG_TAG);    \
-        if (node->debug || LOG_PRI == RUFF_LOG_ERROR) {                     \
-            printf("(%s:%d) " fmt "\n", func, line, ##args);                \
+        struct module_node *module = module_search(&module_tree, LOG_TAG);  \
+        if (module != NULL) {                                               \
+            if (module->debug || LOG_PRI == RUFF_LOG_ERROR) {               \
+                printf("(%s:%d) " fmt "\n", func, line, ##args);            \
+            }                                                               \
+        } else {                                                            \
+            printf("Error: module '%s' is not registered!\n", LOG_TAG);     \
         }                                                                   \
     } while (0)
 #else
@@ -104,21 +108,33 @@ void module_free(struct module_node *module)
     }
 }
 
-void register_module(char *module_name)
+int register_module(char *module_name)
 {
     struct module_node *module = (struct module_node*)malloc(sizeof(struct module_node));
-    module->name = (char*)malloc(sizeof(char) * (strlen(module_name) + 1));
+    if (module == NULL) {
+        printf("Error: malloc failed\n");
+        return -1;
+    }
 
+    module->name = (char*)malloc(sizeof(char) * (strlen(module_name) + 1));
     snprintf(module->name, strlen(module_name) + 1, "%s", module_name);
     module->debug = false;
-
     module_insert(&module_tree, module);
+
+    return 0;
 }
 
-void enable_module_debug(char *module_name)
+int enable_module_debug(char *module_name)
 {
     struct module_node *module = module_search(&module_tree, module_name);
+    if (module == NULL) {
+        printf("Error: no module called '%s'!\n", module_name);
+        return -1;
+    }
+
     module->debug = true;
+
+    return 0;
 }
 
 
@@ -166,7 +182,7 @@ int main(int argc, const char *argv[])
 
     enable_module_debug("pwm");
     enable_module_debug("pwm_jerry");
-
+    enable_module_debug("xxx");
 
     LOGD("pwm", "[debug] pwm");
     LOGE("pwm", "[error] pwm");
@@ -174,7 +190,7 @@ int main(int argc, const char *argv[])
     LOGE("pwm_jerry", "[error] pwm_jerry");
     LOGD("qei", "[debug] qei");
     LOGE("qei", "[error] qei");
-
+    LOGD("ok", "[debug] ok");
 
     struct rb_node *node = (&module_tree)->rb_node;
     printf("preorder_traverse: \n");

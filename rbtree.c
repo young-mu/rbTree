@@ -383,7 +383,7 @@ struct rb_node *rb_next(const struct rb_node *node)
     /* If we have a right-hand child, go down and then left as far
        as we can. */
     if (node->rb_right) {
-        node = node->rb_right; 
+        node = node->rb_right;
         while (node->rb_left)
             node=node->rb_left;
         return (struct rb_node *)node;
@@ -411,7 +411,7 @@ struct rb_node *rb_prev(const struct rb_node *node)
     /* If we have a left-hand child, go down and then right as far
        as we can. */
     if (node->rb_left) {
-        node = node->rb_left; 
+        node = node->rb_left;
         while (node->rb_right)
             node=node->rb_right;
         return (struct rb_node *)node;
