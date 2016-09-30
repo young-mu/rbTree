@@ -167,58 +167,58 @@ int main(int argc, const char *argv[])
     enable_module_debug("pwm");
     enable_module_debug("pwm_jerry");
 
-//    struct rb_node *node = (&module_tree)->rb_node;
-//    printf("preorder_traverse: \n");
-//    preorder_traverse(node);
-//    printf("\n");
-//
-//    printf("inorder_traverse: \n");
-//    inorder_traverse(node);
-//    printf("\n");
-//
-//    printf("postorder_traverse: \n");
-//    postorder_traverse(node);
-//    printf("\n");
-//
-//    /* search */
-//    printf("\n");
-//    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
-//        struct module_node *module = rb_entry(node, struct module_node, node);
-//        printf("%s:%d\n", module->name, module->debug);
-//    }
-//    printf("\n");
-//
-//    /* delete */
-//    printf("delete node pwm\n");
-//    struct module_node *module = module_search(&module_tree, "pwm");
-//    if (module) {
-//        rb_erase(&module->node, &module_tree);
-//        module_free(module);
-//    }
-//
-//    printf("delete node i2c\n");
-//    module = module_search(&module_tree, "i2c");
-//    if (module) {
-//        rb_erase(&module->node, &module_tree);
-//        module_free(module);
-//    }
-//
-//    /* search */
-//    printf("\n");
-//    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
-//        struct module_node *module = rb_entry(node, struct module_node, node);
-//        printf("%s:%d\n", module->name, module->debug);
-//    }
-//    printf("\n");
 
     LOGD("pwm", "[debug] pwm");
     LOGE("pwm", "[error] pwm");
-
     LOGD("pwm_jerry", "[debug] pwm_jerry");
     LOGE("pwm_jerry", "[error] pwm_jerry");
-
     LOGD("qei", "[debug] qei");
     LOGE("qei", "[error] qei");
+
+
+    struct rb_node *node = (&module_tree)->rb_node;
+    printf("preorder_traverse: \n");
+    preorder_traverse(node);
+    printf("\n");
+
+    printf("inorder_traverse: \n");
+    inorder_traverse(node);
+    printf("\n");
+
+    printf("postorder_traverse: \n");
+    postorder_traverse(node);
+    printf("\n");
+
+    /* search */
+    printf("\n");
+    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
+        struct module_node *module = rb_entry(node, struct module_node, node);
+        printf("%s:%d\n", module->name, module->debug);
+    }
+    printf("\n");
+
+    /* delete */
+    printf("delete node pwm\n");
+    struct module_node *module = module_search(&module_tree, "pwm");
+    if (module) {
+        rb_erase(&module->node, &module_tree);
+        module_free(module);
+    }
+
+    printf("delete node i2c\n");
+    module = module_search(&module_tree, "i2c");
+    if (module) {
+        rb_erase(&module->node, &module_tree);
+        module_free(module);
+    }
+
+    /* search */
+    printf("\n");
+    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
+        struct module_node *module = rb_entry(node, struct module_node, node);
+        printf("%s:%d\n", module->name, module->debug);
+    }
+    printf("\n");
 
     return 0;
 }
