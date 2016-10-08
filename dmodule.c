@@ -119,8 +119,12 @@ int get_dmodule_info(char** dmodule_name, bool* dmodule_debug)
     int index = 0;
     for (node = rb_first(&dmodule_tree); node; node = rb_next(node)) {
         struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
-        snprintf(dmodule_name[index], strlen(dmodule->name) + 1, "%s", dmodule->name);
-        dmodule_debug[index] = dmodule->debug;
+        if (dmodule_name != NULL) {
+            snprintf(dmodule_name[index], strlen(dmodule->name) + 1, "%s", dmodule->name);
+        }
+        if (dmodule_debug != NULL) {
+            dmodule_debug[index] = dmodule->debug;
+        }
         index++;
     }
 

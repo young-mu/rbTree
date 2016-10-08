@@ -52,11 +52,13 @@ int main(int argc, const char* argv[])
     get_dmodule_length(length);
 
     char** dmodules_name = (char**)malloc(sizeof(char*) * num);
-    bool* dmodules_debug = (bool*)malloc(sizeof(bool*) * num);
     for (int i = 0; i < num; i++) {
         dmodules_name[i] = (char*)malloc(sizeof(char) * (length[i] + 1));
-        dmodules_debug[i] = (bool)malloc(sizeof(bool) * length[i]);
+        memset(dmodules_name[i], 0, length[i] + 1);
     }
+
+    bool* dmodules_debug = (bool*)malloc(sizeof(bool*) * num);
+    memset(dmodules_debug, 0, num);
 
     get_dmodule_info(dmodules_name, dmodules_debug);
 
