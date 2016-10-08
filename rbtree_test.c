@@ -42,6 +42,27 @@ int main(int argc, const char* argv[])
     register_dmodule("uart");
     register_dmodule("fs");
     register_dmodule("memory");
+    register_dmodule("haha.haha");
+
+
+    int num = get_dmodule_number();
+    int* length = (int*)malloc(sizeof(int) * num);
+    get_dmodule_length(length);
+
+    char** dmodules_name = (char**)malloc(sizeof(char*) * num);
+    bool* dmodules_debug = (bool*)malloc(sizeof(bool*) * num);
+    for (int i = 0; i < num; i++) {
+        dmodules_name[i] = (char*)malloc(sizeof(char) * (length[i] + 1));
+        dmodules_debug[i] = (bool)malloc(sizeof(bool) * length[i]);
+    }
+
+    get_dmodule_info(dmodules_name, dmodules_debug);
+
+    for (int i = 0; i < num; i++) {
+        printf("%s:%d\n", dmodules_name[i], dmodules_debug[i]);
+    }
+
+    printf("\n");
 
     enable_dmodule("pwm");
     disable_dmodule("pwm");
@@ -57,20 +78,12 @@ int main(int argc, const char* argv[])
     LOGD("ok", "[debug] ok");
     printf("\n");
 
-    printf("list dmodules -> ");
-    list_dmodules();
-    printf("\n");
-
     printf("unregister dmodule pwm\n");
     unregister_dmodule("pwm");
     printf("\n");
 
     printf("unregister dmodule i2c\n");
     unregister_dmodule("i2c");
-    printf("\n");
-
-    printf("list dmodules -> ");
-    list_dmodules();
     printf("\n");
 
     struct rb_node* node = (&dmodule_tree)->rb_node;

@@ -16,7 +16,10 @@ extern struct dmodule_node* dmodule_search(struct rb_root* root, char* name);
 
 extern int register_dmodule(char* dmodule_name);
 extern int unregister_dmodule(char* dmodule_name);
-extern int list_dmodules(void);
+
+extern int get_dmodule_number(void);
+extern int get_dmodule_length(int* length);
+extern int get_dmodule_info(char** dmodule_name, bool* dmodule_debug);
 
 extern int enable_dmodule(char* dmodule_name);
 extern int disable_dmodule(char* dmodule_name);

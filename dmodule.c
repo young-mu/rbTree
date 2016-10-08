@@ -85,16 +85,43 @@ int unregister_dmodule(char* dmodule_name)
     return 0;
 }
 
-int list_dmodules(void)
+int get_dmodule_number(void)
 {
     struct rb_node* node = (&dmodule_tree)->rb_node;
 
+    int num = 0;
     for (node = rb_first(&dmodule_tree); node; node = rb_next(node)) {
-        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
-        printf("%s:%d ", dmodule->name, dmodule->debug);
+        num++;
     }
 
-    printf("\n");
+    return num;
+}
+
+int get_dmodule_length(int* length)
+{
+    struct rb_node* node = (&dmodule_tree)->rb_node;
+
+    int num = 0;
+    for (node = rb_first(&dmodule_tree); node; node = rb_next(node)) {
+        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
+        length[num] = (int)strlen(dmodule->name);
+        num++;
+    }
+
+    return 0;
+}
+
+int get_dmodule_info(char** dmodule_name, bool* dmodule_debug)
+{
+    struct rb_node* node = (&dmodule_tree)->rb_node;
+
+    int index = 0;
+    for (node = rb_first(&dmodule_tree); node; node = rb_next(node)) {
+        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
+        snprintf(dmodule_name[index], strlen(dmodule->name) + 1, "%s", dmodule->name);
+        dmodule_debug[index] = dmodule->debug;
+        index++;
+    }
 
     return 0;
 }
