@@ -1,3 +1,4 @@
 rbtree.o
+dmodule.o
 rbtree_test.o
 rbtree_test
