@@ -85,16 +85,17 @@ int unregister_dmodule(char* dmodule_name)
     return 0;
 }
 
-int get_dmodule_number(void)
+int get_dmodule_number(int* num)
 {
     struct rb_node* node = (&dmodule_tree)->rb_node;
 
-    int num = 0;
+    int index = 0;
     for (node = rb_first(&dmodule_tree); node; node = rb_next(node)) {
-        num++;
+        index++;
     }
 
-    return num;
+    *num = index;
+    return 0;
 }
 
 int get_dmodule_length(int* length)

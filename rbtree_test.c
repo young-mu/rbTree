@@ -45,7 +45,9 @@ int main(int argc, const char* argv[])
     register_dmodule("haha.haha");
 
     // list modules
-    int num = get_dmodule_number();
+    int num = 0;
+    get_dmodule_number(&num);
+
     int* length = (int*)malloc(sizeof(int) * num);
     get_dmodule_length(length);
 
