@@ -4,22 +4,29 @@
 #include <string.h>
 #include <stdbool.h>
 
-struct module_node {
+struct dmodule_node {
     struct rb_node node;
     bool debug;
     char* name;
 };
 
-struct module_node* module_search(struct rb_root* root, char* name);
-int module_insert(struct rb_root* root, struct module_node* module);
-void module_free(struct module_node* module);
-int register_module(char* module_name);
-int enable_module_debug(char* module_name);
+static int _dmodule_insert(struct rb_root* root, struct dmodule_node* dmodule);
+static void _dmodule_free(struct dmodule_node* dmodule);
+
+struct dmodule_node* dmodule_search(struct rb_root* root, char* name);
+
+int register_dmodule(char* dmodule_name);
+int unregister_dmodule(char* dmodule_name);
+int list_dmodule(void);
+
+int enable_dmodule(char* dmodule_name);
+int disable_dmodule(char* dmodule_name);
+
 void preorder_traverse(struct rb_node* node);
 void inorder_traverse(struct rb_node* node);
 void postorder_traverse(struct rb_node* node);
 
-struct rb_root module_tree = RB_ROOT;
+struct rb_root dmodule_tree = RB_ROOT;
 
 #define DEBUG 1
 
@@ -32,53 +39,53 @@ enum _LOG_PRI {
 #define LOGD(LOG_TAG, ...)   _LOG(RUFF_LOG_DEBUG, LOG_TAG, __func__, __LINE__, ##__VA_ARGS__)
 
 #if DEBUG
-#define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                    \
-    do {                                                                    \
-        struct module_node* module = module_search(&module_tree, LOG_TAG);  \
-        if (module != NULL) {                                               \
-            if (module->debug || LOG_PRI == RUFF_LOG_ERROR) {               \
-                printf("(%s:%d) " fmt "\n", func, line, ##args);            \
-            }                                                               \
-        } else {                                                            \
-            printf("Error: module '%s' is not registered!\n", LOG_TAG);     \
-        }                                                                   \
+#define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                        \
+    do {                                                                        \
+        struct dmodule_node* dmodule = dmodule_search(&dmodule_tree, LOG_TAG);   \
+        if (dmodule != NULL) {                                                   \
+            if (dmodule->debug || LOG_PRI == RUFF_LOG_ERROR) {                   \
+                printf("(%s:%d) " fmt "\n", func, line, ##args);                \
+            }                                                                   \
+        } else {                                                                \
+            printf("Error: dmodule '%s' is not registered!\n", LOG_TAG);         \
+        }                                                                       \
     } while (0)
 #else
-#define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                    \
-    do {                                                                    \
-        if (LOG_PRI == RUFF_LOG_ERROR) {                                    \
-            printf("(%s:%d) " fmt "\n", func, line, ##args);                \
-        }                                                                   \
+#define _LOG(LOG_PRI, LOG_TAG, func, line, fmt, args...)                        \
+    do {                                                                        \
+        if (LOG_PRI == RUFF_LOG_ERROR) {                                        \
+            printf("(%s:%d) " fmt "\n", func, line, ##args);                    \
+        }                                                                       \
     } while (0)
 #endif
 
-struct module_node* module_search(struct rb_root* root, char* name)
+struct dmodule_node* dmodule_search(struct rb_root* root, char* name)
 {
     struct rb_node* node = root->rb_node;
     while (node) {
-        struct module_node* module = rb_entry(node, struct module_node, node);
+        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
         int result;
-        result = strcmp(name, module->name);
+        result = strcmp(name, dmodule->name);
         if (result < 0) {
             node = node->rb_left;
         } else if (result > 0) {
             node = node->rb_right;
         } else {
-            return module;
+            return dmodule;
         }
     }
     return NULL;
 }
 
-int module_insert(struct rb_root* root, struct module_node* module)
+static int _dmodule_insert(struct rb_root* root, struct dmodule_node* dmodule)
 {
     struct rb_node** new = &(root->rb_node);
     struct rb_node* parent = NULL;
 
     // Figure out where to put new code
     while (*new) {
-        struct module_node* this = rb_entry(*new, struct module_node, node);
-        int result = strcmp(module->name, this->name);
+        struct dmodule_node* this = rb_entry(*new, struct dmodule_node, node);
+        int result = strcmp(dmodule->name, this->name);
         parent = *new;
         if (result < 0) {
             new = &((*new)->rb_left);
@@ -90,49 +97,87 @@ int module_insert(struct rb_root* root, struct module_node* module)
     }
 
     // Add new node and rebalance tree
-    rb_link_node(&module->node, parent, new);
-    rb_insert_color(&module->node, root);
+    rb_link_node(&dmodule->node, parent, new);
+    rb_insert_color(&dmodule->node, root);
 
     return 1;
 }
 
-void module_free(struct module_node* module)
+static void _dmodule_free(struct dmodule_node* dmodule)
 {
-    if (module != NULL) {
-        if (module->name != NULL) {
-            free(module->name);
-            module->name = NULL;
+    if (dmodule != NULL) {
+        if (dmodule->name != NULL) {
+            free(dmodule->name);
+            dmodule->name = NULL;
         }
-        free(module);
-        module = NULL;
+        free(dmodule);
+        dmodule = NULL;
     }
 }
 
-int register_module(char* module_name)
+int register_dmodule(char* dmodule_name)
 {
-    struct module_node* module = (struct module_node*)malloc(sizeof(struct module_node));
-    if (module == NULL) {
+    struct dmodule_node* dmodule = (struct dmodule_node*)malloc(sizeof(struct dmodule_node));
+    if (dmodule == NULL) {
         printf("Error: malloc failed\n");
         return -1;
     }
 
-    module->name = (char*)malloc(sizeof(char) * (strlen(module_name) + 1));
-    snprintf(module->name, strlen(module_name) + 1, "%s", module_name);
-    module->debug = false;
-    module_insert(&module_tree, module);
+    dmodule->name = (char*)malloc(sizeof(char) * (strlen(dmodule_name) + 1));
+    snprintf(dmodule->name, strlen(dmodule_name) + 1, "%s", dmodule_name);
+    dmodule->debug = false;
+    _dmodule_insert(&dmodule_tree, dmodule);
 
     return 0;
 }
 
-int enable_module_debug(char* module_name)
+int unregister_dmodule(char* dmodule_name)
 {
-    struct module_node* module = module_search(&module_tree, module_name);
-    if (module == NULL) {
-        printf("Error: no module called '%s'!\n", module_name);
+    struct dmodule_node* dmodule = dmodule_search(&dmodule_tree, dmodule_name);
+    if (dmodule) {
+        rb_erase(&dmodule->node, &dmodule_tree);
+        _dmodule_free(dmodule);
+    }
+
+    return 0;
+}
+
+int list_dmodule(void)
+{
+    struct rb_node* node = (&dmodule_tree)->rb_node;
+
+    for (node = rb_first(&dmodule_tree); node; node = rb_next(node)) {
+        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
+        printf("%s:%d ", dmodule->name, dmodule->debug);
+    }
+
+    printf("\n");
+
+    return 0;
+}
+
+int enable_dmodule(char* dmodule_name)
+{
+    struct dmodule_node* dmodule = dmodule_search(&dmodule_tree, dmodule_name);
+    if (dmodule == NULL) {
+        printf("Error: no dmodule called '%s'!\n", dmodule_name);
         return -1;
     }
 
-    module->debug = true;
+    dmodule->debug = true;
+
+    return 0;
+}
+
+int disable_dmodule(char* dmodule_name)
+{
+    struct dmodule_node* dmodule = dmodule_search(&dmodule_tree, dmodule_name);
+    if (dmodule == NULL) {
+        printf("Error: no dmodule called '%s'!\n", dmodule_name);
+        return -1;
+    }
+
+    dmodule->debug = false;
 
     return 0;
 }
@@ -140,8 +185,8 @@ int enable_module_debug(char* module_name)
 void preorder_traverse(struct rb_node* node)
 {
     if (node) {
-        struct module_node* module = rb_entry(node, struct module_node, node);
-        printf("%s%d ", module->name, module->debug);
+        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
+        printf("%s:%d ", dmodule->name, dmodule->debug);
         preorder_traverse(node->rb_left);
         preorder_traverse(node->rb_right);
     }
@@ -151,8 +196,8 @@ void inorder_traverse(struct rb_node* node)
 {
     if (node) {
         inorder_traverse(node->rb_left);
-        struct module_node* module = rb_entry(node, struct module_node, node);
-        printf("%s:%d ", module->name, module->debug);
+        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
+        printf("%s:%d ", dmodule->name, dmodule->debug);
         inorder_traverse(node->rb_right);
     }
 }
@@ -162,26 +207,27 @@ void postorder_traverse(struct rb_node* node)
     if (node) {
         postorder_traverse(node->rb_left);
         postorder_traverse(node->rb_right);
-        struct module_node* module = rb_entry(node, struct module_node, node);
-        printf("%s:%d ", module->name, module->debug);
+        struct dmodule_node* dmodule = rb_entry(node, struct dmodule_node, node);
+        printf("%s:%d ", dmodule->name, dmodule->debug);
     }
 }
 
 int main(int argc, const char* argv[])
 {
-    register_module("pwm");
-    register_module("pwm_jerry");
-    register_module("i2c");
-    register_module("i2c_jerry");
-    register_module("qei");
-    register_module("qei_jerry");
-    register_module("uart");
-    register_module("fs");
-    register_module("memory");
+    register_dmodule("pwm");
+    register_dmodule("pwm_jerry");
+    register_dmodule("i2c");
+    register_dmodule("i2c_jerry");
+    register_dmodule("qei");
+    register_dmodule("qei_jerry");
+    register_dmodule("uart");
+    register_dmodule("fs");
+    register_dmodule("memory");
 
-    enable_module_debug("pwm");
-    enable_module_debug("pwm_jerry");
-    enable_module_debug("xxx");
+    enable_dmodule("pwm");
+    disable_dmodule("pwm");
+    enable_dmodule("pwm_jerry");
+    enable_dmodule("xxx");
 
     LOGD("pwm", "[debug] pwm");
     LOGE("pwm", "[error] pwm");
@@ -190,10 +236,25 @@ int main(int argc, const char* argv[])
     LOGD("qei", "[debug] qei");
     LOGE("qei", "[error] qei");
     LOGD("ok", "[debug] ok");
-
     printf("\n");
 
-    struct rb_node* node = (&module_tree)->rb_node;
+    printf("list dmodules -> ");
+    list_dmodule();
+    printf("\n");
+
+    printf("unregister dmodule pwm\n");
+    unregister_dmodule("pwm");
+    printf("\n");
+
+    printf("unregister dmodule i2c\n");
+    unregister_dmodule("i2c");
+    printf("\n");
+
+    printf("list dmodules -> ");
+    list_dmodule();
+    printf("\n");
+
+    struct rb_node* node = (&dmodule_tree)->rb_node;
     printf("preorder_traverse: \n");
     preorder_traverse(node);
     printf("\n\n");
@@ -205,36 +266,6 @@ int main(int argc, const char* argv[])
     printf("postorder_traverse: \n");
     postorder_traverse(node);
     printf("\n\n");
-
-    /* search */
-    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
-        struct module_node* module = rb_entry(node, struct module_node, node);
-        printf("%s:%d\n", module->name, module->debug);
-    }
-    printf("\n");
-
-    /* delete */
-    printf("delete node pwm\n");
-    struct module_node* module = module_search(&module_tree, "pwm");
-    if (module) {
-        rb_erase(&module->node, &module_tree);
-        module_free(module);
-    }
-
-    printf("delete node i2c\n");
-    module = module_search(&module_tree, "i2c");
-    if (module) {
-        rb_erase(&module->node, &module_tree);
-        module_free(module);
-    }
-
-    /* search */
-    printf("\n");
-    for (node = rb_first(&module_tree); node; node = rb_next(node)) {
-        struct module_node* module = rb_entry(node, struct module_node, node);
-        printf("%s:%d\n", module->name, module->debug);
-    }
-    printf("\n");
 
     return 0;
 }
