@@ -44,7 +44,7 @@ int main(int argc, const char* argv[])
     register_dmodule("memory");
     register_dmodule("haha.haha");
 
-
+    // list modules
     int num = get_dmodule_number();
     int* length = (int*)malloc(sizeof(int) * num);
     get_dmodule_length(length);
@@ -61,8 +61,8 @@ int main(int argc, const char* argv[])
     for (int i = 0; i < num; i++) {
         printf("%s:%d\n", dmodules_name[i], dmodules_debug[i]);
     }
-
     printf("\n");
+
 
     enable_dmodule("pwm");
     disable_dmodule("pwm");
