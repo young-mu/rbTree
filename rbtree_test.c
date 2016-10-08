@@ -57,7 +57,7 @@ int main(int argc, const char* argv[])
         memset(dmodules_name[i], 0, length[i] + 1);
     }
 
-    bool* dmodules_debug = (bool*)malloc(sizeof(bool*) * num);
+    bool* dmodules_debug = (bool*)malloc(sizeof(bool) * num);
     memset(dmodules_debug, 0, num);
 
     get_dmodule_info(dmodules_name, dmodules_debug);
